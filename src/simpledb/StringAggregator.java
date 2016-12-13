@@ -32,6 +32,7 @@ public class StringAggregator implements Aggregator {
 	 */
 	public void merge(Tuple tup) {
 		// some code goes here
+		
 	}
 
 	/**

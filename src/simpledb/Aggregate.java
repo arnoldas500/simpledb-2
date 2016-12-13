@@ -56,10 +56,14 @@ public class Aggregate extends AbstractDbIterator {
 	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
 		// some code goes here
 		child.open(); //open the child
+		/*
 		//now we need to add the children to the group and if there are more children return null
 		while(child.hasNext()){
-			
+			child.merge(child.next());
 		}
+		child = child.iterator();
+		child.open();
+		*/
 	}
 
 	/**
@@ -81,6 +85,7 @@ public class Aggregate extends AbstractDbIterator {
 
 	public void rewind() throws DbException, TransactionAbortedException {
 		// some code goes here
+		child.rewind();
 	}
 
 	/**
@@ -92,12 +97,14 @@ public class Aggregate extends AbstractDbIterator {
 	 * {@code aggName(aop) (child_td.getFieldName(afield))} where {@code aop} and {@code afield} are given in the
 	 * constructor, and {@code child_td} is the {@code TupleDesc} of the child iterator.
 	 */
-	public TupleDesc getTupleDesc() {
+	public TupleDesc getTupleDesc() {  //gets what the value is (see) AggregateTest.java unit test
 		// some code goes here
+		
 		return null;
 	}
 
 	public void close() {
 		// some code goes here
+		child.close();
 	}
 }
