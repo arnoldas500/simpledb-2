@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.text.ParseException;
 import java.util.*;
 import java.io.*;
 
@@ -12,6 +13,8 @@ import java.io.*;
  * @see BufferPool
  */
 public class HeapPage implements Page {
+
+	private static final DataInputStream DataInputStream = null;
 
 	/**
 	 * The ID of this {@code HeapPage}.
@@ -32,6 +35,7 @@ public class HeapPage implements Page {
 	 * The previous image of this {@code HeapPage}.
 	 */
 	byte[] oldData;
+	
 
 	/**
 	 * Creates a {@code HeapPage} from a byte array storing data read from disk. This byte array contains (1) a 4-byte
@@ -73,9 +77,14 @@ public class HeapPage implements Page {
 	 *         {@code UnsupportedOperationException}) (note that this iterator shouldn't return {@code Tuples} in empty
 	 *         slots!)
 	 */
+	
 	public Iterator<Tuple> iterator() {
 		// some code goes here
-		throw new UnsupportedOperationException("Implement this");
+		
+		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+		Iterator<Tuple> iterator = tuples.iterator(); 
+        while(iterator.hasNext()) return iterator;  
+        throw new UnsupportedOperationException("Implement this"); 
 	}
 
 	/**
@@ -94,6 +103,7 @@ public class HeapPage implements Page {
 	 * @param t
 	 *            the {@code Tuple} to delete
 	 */
+	
 	public void deleteTuple(Tuple t) throws DbException {
 		// some code goes here
 		// not necessary for assignment1
@@ -140,8 +150,28 @@ public class HeapPage implements Page {
 	 *            the ID of the entry at which the {@code Tuple} is stored.
 	 */
 	public Tuple getTuple(int entryID) {
+		
 		// some code goes here
-		throw new UnsupportedOperationException("Implement this");
+		int location = tupleLocation(4+4*entryID);
+		DataInputStream in = new DataInputStream(new ByteArrayInputStream(data, location, data.length - location)); 
+		Tuple newtuple = createTuple(in);
+		
+		
+		
+		//Tuple tuple = null;
+		
+		//tuple = getTuple(entryID);
+		
+		
+		if(!newtuple.equals(null))
+			{
+			
+			newtuple.setRecordId(new RecordId(pid, entryID));
+			return newtuple;
+			}
+		else 
+			throw new UnsupportedOperationException("Implement this");
+		
 	}
 
 	/**
@@ -266,7 +296,10 @@ public class HeapPage implements Page {
 	 * @return the number of entries in this {@code HeapPage}.
 	 */
 	protected int entryCount() {
+		
 		// some code goes here
+		if (entryCount() >= 0)
+		return readInt(data,0);
 		throw new UnsupportedOperationException("Implement this");
 	}
 
@@ -291,6 +324,9 @@ public class HeapPage implements Page {
 	 */
 	protected int tupleLocation(int entryID) {
 		// some code goes here
+		if(entryID!=-1)
+		return readInt(data,4+4*entryID);
+		else
 		throw new UnsupportedOperationException("Implement this");
 	}
 

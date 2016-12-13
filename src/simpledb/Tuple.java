@@ -87,7 +87,13 @@ public class Tuple {
      * "fields[0]|fields[1]|...|fields[M-1]", where M is the number of fields.
      */
     public String toString() {
-        // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+    	// some code goes here
+    	String str ="";
+       for(int i =0; i < fields.length-1; i++){
+    	   str = fields[i]+"|";
+       }
+       str = str+fields[fields.length-1];
+       if(!str.isEmpty()) return str;
+      throw new UnsupportedOperationException("Implement this");
     }
 }

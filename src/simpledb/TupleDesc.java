@@ -121,8 +121,12 @@ public class TupleDesc {
 	 *             if i is not a valid field reference.
 	 */
 	public Type getType(int i) throws NoSuchElementException {
-		// some code goes here
+		
+        if(i>=0 && i < numFields())// some code goes here
+            return types[i];
         throw new UnsupportedOperationException("Implement this");
+        
+        
 	}
 
 	/**
@@ -164,6 +168,18 @@ public class TupleDesc {
 	 */
 	public String toString() {
 		// some code goes here
+	    String des="";	   	   
+	    for (int i = 0; i < types.length-1; i++)
+	    {
+	    	des = des + types[i] + "(" + names[i] +")" + "|";
+	        
+	    }
+	    des = des + types[types.length-1] + "("+ names[names.length-1] + ")"; 
+	    
+	    if (!des.isEmpty()) 
+	    	return des;
+    
         throw new UnsupportedOperationException("Implement this");
-	}
+        
+  }	
 }

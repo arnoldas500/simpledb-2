@@ -22,6 +22,8 @@ public class HeapFile implements DbFile {
 	 */
 	protected TupleDesc td;
 
+	private Page page;
+
 	/**
 	 * Constructs a heap file backed by the specified file.
 	 * 
@@ -66,6 +68,25 @@ public class HeapFile implements DbFile {
 	// see DbFile.java for javadocs
 	public Page readPage(PageId pid) {
 		// some code goes here
+		if(getId() == pid.getTableId()) 
+        {
+            RandomAccessFile randomAccessFile = null;   
+            byte[] page = new byte[BufferPool.PAGE_SIZE];   
+            try {
+                randomAccessFile = new RandomAccessFile(file, "rw");    
+                randomAccessFile.seek(pid.pageno());    
+                randomAccessFile.readFully(page);;      
+            } catch (FileNotFoundException e) {e.printStackTrace(); 
+            } catch (IOException e) {e.printStackTrace();}  
+            HeapPage heapPage = null;   
+            try {
+                heapPage = new HeapPage((HeapPageId) pid, page);    
+            } catch (IOException e) {e.printStackTrace();}
+            try {
+                randomAccessFile.close();   
+            } catch (IOException e) {e.printStackTrace();}
+            return heapPage;    
+        }
 		throw new UnsupportedOperationException("Implement this");
 	}
 
@@ -100,6 +121,16 @@ public class HeapFile implements DbFile {
 	// see DbFile.java for javadocs
 	public DbFileIterator iterator(TransactionId tid) {
 		// some code goes here
+		ArrayList<HeapPage> heappage = new ArrayList<HeapPage>();  
+        Iterator<HeapPage> iteratorhp = heappage.iterator();
+        BufferPool bufferpool = new BufferPool(heappage.size());    
+        page = null;  
+        Permissions perm = new Permissions(0); 
+        try {
+            page = (HeapPage) bufferpool.getPage(tid, page.getId(), perm);  
+        } catch (TransactionAbortedException e) {e.printStackTrace();
+        } catch (DbException e) {e.printStackTrace();}  
+        while(iteratorhp.hasNext()) return (DbFileIterator) iteratorhp; 
 		throw new UnsupportedOperationException("Implement this");
 	}
 
