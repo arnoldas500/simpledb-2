@@ -75,8 +75,15 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public int getTableId(String name) {
-		// some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        // some code goes here
+       
+      /* if (name2tableID.get(name).equals(null)) 
+    	   throw new NoSuchElementException("Implement this");      
+       else 
+    	   return name2tableID.get(name); */
+	   Integer id = name2tableID.get(name);
+	   if (id == null || name == null) throw new NoSuchElementException("Implement this"); 
+	   else return id;
 	}
 
 	/**
@@ -88,10 +95,16 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-		// some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        // some code goes here
+		/*if(tableID2desc.get(tableid).equals(null)) 
+			throw new UnsupportedOperationException("Implement this");   
+		else 
+			return tableID2desc.get(tableid);*/
+		TupleDesc td=tableID2desc.get(tableid);
+		if (td==null) throw new UnsupportedOperationException("Implement this");
+		else return td;
 	}
-
+       
 	/**
 	 * Returns the DbFile that can be used to read the contents of the specified table.
 	 * 
@@ -101,8 +114,10 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public DbFile getDbFile(int tableid) throws NoSuchElementException {
-		// some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        // some code goes here
+        if (tableID2dbFile.get(tableid).equals(null))
+        	throw new UnsupportedOperationException("Implement this");
+        else return tableID2dbFile.get(tableid);
 	}
 
 	/** Delete all tables from the catalog */
@@ -114,16 +129,19 @@ public class Catalog {
 
 	public String getPrimaryKey(int tableid) {
 		// some code goes here
+            
 		return null;
 	}
 
 	public Iterator<Integer> tableIdIterator() {
 		// some code goes here
+            
 		return null;
 	}
 
 	public String getTableName(int id) {
 		// some code goes here
+            
 		return null;
 	}
 

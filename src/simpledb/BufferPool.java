@@ -60,7 +60,17 @@ public class BufferPool {
 	public Page getPage(TransactionId tid, PageId pid, Permissions perm) throws TransactionAbortedException,
 			DbException {
 		// some code goes here
-        throw new UnsupportedOperationException("Implement this");
+		if(pages.containsKey(pid)) return pages.get(pid);
+		else{
+			DbFile dbfile = Database.getCatalog().getDbFile(pid.getTableId());
+			Page page = dbfile.readPage(pid);
+			if(pages.size()<numPages){
+				pages.put(pid, page);
+				return page;
+			}
+			else throw new DbException("Request exceeds the limitation.");
+		}
+        //throw new UnsupportedOperationException("Implement this");
 	}
 
 	/**
