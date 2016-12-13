@@ -12,25 +12,41 @@ public class Delete extends AbstractDbIterator {
      * @param t The transaction this delete runs in
      * @param child The child operator from which to read tuples for deletion
      */
+	
+	protected DbIterator child;
+	protected TransactionId t;
+	protected int afield;
+	
+	
     public Delete(TransactionId t, DbIterator child) {
         // some code goes here
+    	this.child = child;
+    	this.t = t;
+    	
     }
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+    	TupleDesc td = child.getTupleDesc();
+    	Type typeDes = td.getType(afield); //this line may not be necessary
+        return td;
     }
 
     public void open() throws DbException, TransactionAbortedException {
         // some code goes here
+    	child.open();
+    	
     }
 
     public void close() {
         // some code goes here
+    	child.close();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
+    	child.rewind();
+    	
     }
 
     /**
