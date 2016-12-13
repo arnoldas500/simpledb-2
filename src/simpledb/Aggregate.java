@@ -15,6 +15,7 @@ public class Aggregate extends AbstractDbIterator {
 	Predicate p;
 	protected Type afieldType; //for saving the types of afield and gfield respectively
 	protected Type gfieldType;
+	protected Aggregator myAggregator;
 	
 
 	/**
@@ -38,8 +39,22 @@ public class Aggregate extends AbstractDbIterator {
 		this.child = child;
 		this.afield = afield;
 		this.gfield = gfield;
-		afieldType = getType(child.getTupleDesc(), afield);
-		gfieldType = getType(child.getTupleDesc(), gfield);
+		//afieldType = getType(child.getTupleDesc(), afield);
+		//gfieldType = getType(child.getTupleDesc(), gfield);
+		if(gfield == Aggregator.NO_GROUPING){
+			gfieldType = null;
+		}
+		else{
+			afieldType = child.getTupleDesc().getType(afield);
+			switch (afieldType){
+			case INT_TYPE:
+				myAggregator = new IntAggregator(gfield,gfieldType,afield,aop);
+				break;
+			case STRING_TYPE:
+				myAggregator = new StringAggregator(gfield,gfieldType,afield,aop);
+				break;
+			}
+		}
 	    
 	}
 
