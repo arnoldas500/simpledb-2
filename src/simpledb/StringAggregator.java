@@ -1,9 +1,22 @@
 package simpledb;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import simpledb.Aggregator.Op;
+
 /**
  * A {@code StringAggregator} computes some aggregate value over a set of {@code StringField}s.
  */
 public class StringAggregator implements Aggregator {
+
+
+	protected int gbfield;
+	protected Op what;
+	protected Type gbfieldtype;
+	protected int afield;
+	protected HashMap<Field, Integer> count;
 
 	/**
 	 * Constructs a {@code StringAggregator}.
@@ -22,16 +35,47 @@ public class StringAggregator implements Aggregator {
 
 	public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
 		// some code goes here
+		this.gbfield = gbfield;
+		this.gbfieldtype = gbfieldtype;
+		this.afield = afield;
+		this.what = what;
+		assert(what == Op.COUNT);
+		count = new HashMap<Field, Integer>();
 	}
 
+	protected TupleDesc createMerge(){
+		String[] name;
+		Type[] type;
+		if(gbfield == Aggregator.NO_GROUPING){
+			name = new String[] {"aggregateValue"};
+			type = new Type[] {Type.INT_TYPE};
+		}else{
+			name = new String[] {"groupValue", "aggregateValue"};
+			type = new Type[] {gbfieldtype, Type.INT_TYPE};
+		}
+		return new TupleDesc(type,name);
+	}
+	
 	/**
 	 * Merges a new tuple into the aggregate, grouping as indicated in the constructor.
 	 * 
 	 * @param tup
 	 *            the Tuple containing an aggregate field and a group-by field
 	 */
-	public void merge(Tuple tup) {
+	public void merge(Tuple tMerge) {
 		// some code goes here
+		Field tuplegField;
+		if(gbfield == Aggregator.NO_GROUPING){
+			tuplegField = null;
+		}else
+			tuplegField = tMerge.getField(gbfield);
+		
+		if(!count.containsKey(tuplegField)){
+			count.put(tuplegField, 0);
+		}
+		
+		int runningTotal = count.get(tuplegField);
+		count.put(tuplegField, runningTotal+1);
 	}
 
 	/**
@@ -42,8 +86,42 @@ public class StringAggregator implements Aggregator {
 	 *         aggregate specified in the constructor.
 	 */
 	public DbIterator iterator() {
-		// some code goes here
-		throw new UnsupportedOperationException("implement me");
+		ArrayList<Tuple> t1 = new ArrayList<Tuple>();
+		TupleDesc aggTupleDesc = createMerge();
+		Tuple add;
+		Field group = (Field) count.keySet().iterator();
+		while(((Iterator<Field>) group).hasNext()){
+			int total = count.get(group);
+			add = new Tuple(aggTupleDesc);
+			if(gbfield == Aggregator.NO_GROUPING)
+				add.setField(0, new IntField(total));
+			else{
+				add.setField(0, group);
+				add.setField(1, new IntField(total));
+			}
+			t1.add(add);
+		}
+		return new TupleIterator(aggTupleDesc, t1);
 	}
-
 }
+		
+		/*
+		 * Iterator<String> it = list.iterator();
+while (it.hasNext()) {
+  String string=it.next();
+  System.out.println(string);
+}
+		for(int i=0; i<count.keySet().size(); i++){
+			int total = count.get(i);
+			add = new Tuple(aggTupleDesc);
+			if(gbfield == Aggregator.NO_GROUPING)
+				add.setField(0, new IntField(total));
+			else{
+				add.setField(0, count.get(i));
+			}
+			*/
+		//}
+		//throw new UnsupportedOperationException("implement me");
+	//}
+
+

@@ -2,6 +2,8 @@ package simpledb;
 
 import java.util.*;
 
+import simpledb.Aggregator.Op;
+
 /**
  * An {@code Aggregate} operator computes an aggregate value (e.g., sum, avg, max, min) over a single column, grouped by a
  * single column.
@@ -13,6 +15,8 @@ public class Aggregate extends AbstractDbIterator {
 	protected int gfield;
 	protected Type afieldType;
 	protected Type gfieldType;
+	protected Op aop;
+	protected Aggregator globalAggrigator;
 
 	/**
 	 * Constructs an {@code Aggregate}.
@@ -34,9 +38,30 @@ public class Aggregate extends AbstractDbIterator {
 		this.child = child;
 		this.afield = afield;
 		this.gfield = gfield;
-		afieldType = getType(child.getTupleDesc(), afield);
-		gfieldType = getType(child.getTupleDesc(), gfield);
+		this.aop = aop;
+		//afieldType = getType(child.getTupleDesc(), afield);
+		//gfieldType = getType(child.getTupleDesc(), gfield);
 		//created constructors
+		//Type gType; //this is the group type
+		
+		if(gfield == Aggregator.NO_GROUPING){
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType = null;
+		}else{
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType = getType(child.getTupleDesc(), gfield);
+			//gType = child.getTupleDesc().getType(gfield);
+		}
+		//Type aType; // this is the aggregate type
+		//aType = child.getTupleDesc().getType(afield);
+		afieldType = getType(child.getTupleDesc(), afield);
+		switch(afieldType){
+		case INT_TYPE:
+			globalAggrigator = new IntAggregator(gfield,gfieldType,afield,aop);
+			break;
+		case STRING_TYPE:
+			globalAggrigator = new StringAggregator(gfield,gfieldType,afield,aop);
+		}
 	}
 
 	public static String aggName(Aggregator.Op aop) {
@@ -74,6 +99,18 @@ public class Aggregate extends AbstractDbIterator {
 		}
 		
 	}
+		/*
+		
+		*/
+		/*
+		 * 
+		 * if gfield = 0
+		 * 	afield = gettype
+		 * else
+		 * 	afield = gettype 
+		 * 	gfield = gettype
+		 */
+	//}
 		/*
 		while(child.hasNext()){ //while the db iterator isnt run keep looping
         	Tuple t1 = child.next(); // get the next child and store it in tuple t1
