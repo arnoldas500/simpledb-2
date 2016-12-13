@@ -8,6 +8,12 @@ import java.util.*;
  */
 public class Aggregate extends AbstractDbIterator {
 
+	protected DbIterator child;
+	protected int afield;
+	protected int gfield;
+	protected Type afieldType;
+	protected Type gfieldType;
+
 	/**
 	 * Constructs an {@code Aggregate}.
 	 *
@@ -25,7 +31,12 @@ public class Aggregate extends AbstractDbIterator {
 	 *            the {@code Aggregator} operator to use
 	 */
 	public Aggregate(DbIterator child, int afield, int gfield, Aggregator.Op aop) {
-		// some code goes here
+		this.child = child;
+		this.afield = afield;
+		this.gfield = gfield;
+		afieldType = getType(child.getTupleDesc(), afield);
+		gfieldType = getType(child.getTupleDesc(), gfield);
+		//created constructors
 	}
 
 	public static String aggName(Aggregator.Op aop) {
@@ -45,7 +56,8 @@ public class Aggregate extends AbstractDbIterator {
 	}
 
 	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
-		// some code goes here
+		//made to open child
+		child.open();
 	}
 
 	/**
@@ -55,12 +67,31 @@ public class Aggregate extends AbstractDbIterator {
 	 * there are no more {@code Tuple}s.
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
-		// some code goes here
-		return null;
+		if(child.hasNext()){
+			return child.next();
+		}else{
+			return null;
+		}
+		
 	}
+		/*
+		while(child.hasNext()){ //while the db iterator isnt run keep looping
+        	Tuple t1 = child.next(); // get the next child and store it in tuple t1
+        	if(t1 == -1){ //if the column over which we are grouping the result is -1 then there is no grouping and set it as a single tuple, otherwise create the group
+        		//return single tuple
+        		System.out.println(t1);
+        		return t1; //returns the next tuple 
+        	}else{
+        		//return the groupings
+        	}
+        		
+        }
+        return null; // return null  if there are no more tuples 
+    }
+	*/
 
 	public void rewind() throws DbException, TransactionAbortedException {
-		// some code goes here
+		child.rewind();
 	}
 
 	/**
@@ -71,13 +102,27 @@ public class Aggregate extends AbstractDbIterator {
 	 * The name of an aggregate column should be informative. For example:
 	 * {@code aggName(aop) (child_td.getFieldName(afield))} where {@code aop} and {@code afield} are given in the
 	 * constructor, and {@code child_td} is the {@code TupleDesc} of the child iterator.
+	 * @param tupleDesc 
 	 */
+	//method for getting the tuple type at afield
+	public Type getType(TupleDesc tupleDesc, int column){
+		Type colType;
+		colType = tupleDesc.getType(column);
+		return colType;
+	}
+	
 	public TupleDesc getTupleDesc() {
 		// some code goes here
-		return null;
+		//if(child.hasNext()){
+		TupleDesc td = child.getTupleDesc();
+		Type typeDes = td.getType(afield);
+		return td;
+		//}
+		//else
+			//return null;
 	}
 
 	public void close() {
-		// some code goes here
+		child.close();
 	}
 }
