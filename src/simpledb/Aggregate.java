@@ -13,6 +13,9 @@ public class Aggregate extends AbstractDbIterator {
 	protected int afield;
 	protected int gfield;
 	Predicate p;
+	protected Type afieldType; //for saving the types of afield and gfield respectively
+	protected Type gfieldType;
+	
 
 	/**
 	 * Constructs an {@code Aggregate}.
@@ -35,6 +38,15 @@ public class Aggregate extends AbstractDbIterator {
 		this.child = child;
 		this.afield = afield;
 		this.gfield = gfield;
+		afieldType = getType(child.getTupleDesc(), afield);
+		gfieldType = getType(child.getTupleDesc(), gfield);
+	    
+	}
+
+	public Type getType(TupleDesc tupleDesc, int column){
+		Type colType;
+		colType = tupleDesc.getType(column);
+		return colType;
 	}
 
 	public static String aggName(Aggregator.Op aop) {
@@ -99,8 +111,11 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	public TupleDesc getTupleDesc() {  //gets what the value is (see) AggregateTest.java unit test
 		// some code goes here
-		
-		return null;
+			// some code goes here
+			//if(child.hasNext()){
+			TupleDesc td = child.getTupleDesc();
+			Type typeDes = td.getType(afield);
+			return td;
 	}
 
 	public void close() {
