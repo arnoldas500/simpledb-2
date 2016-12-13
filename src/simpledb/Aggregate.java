@@ -8,6 +8,12 @@ import java.util.*;
  */
 public class Aggregate extends AbstractDbIterator {
 
+	
+	protected DbIterator child;
+	protected int afield;
+	protected int gfield;
+	Predicate p;
+
 	/**
 	 * Constructs an {@code Aggregate}.
 	 *
@@ -26,6 +32,9 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	public Aggregate(DbIterator child, int afield, int gfield, Aggregator.Op aop) {
 		// some code goes here
+		this.child = child;
+		this.afield = afield;
+		this.gfield = gfield;
 	}
 
 	public static String aggName(Aggregator.Op aop) {
@@ -46,6 +55,11 @@ public class Aggregate extends AbstractDbIterator {
 
 	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
 		// some code goes here
+		child.open(); //open the child
+		//now we need to add the children to the group and if there are more children return null
+		while(child.hasNext()){
+			
+		}
 	}
 
 	/**
@@ -56,7 +70,13 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
 		// some code goes here
-		return null;
+		if (child.hasNext()){
+			return child.next();
+		}
+		else {
+			return null;
+		}
+		
 	}
 
 	public void rewind() throws DbException, TransactionAbortedException {
