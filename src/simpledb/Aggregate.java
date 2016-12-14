@@ -39,29 +39,13 @@ public class Aggregate extends AbstractDbIterator {
 		this.afield = afield;
 		this.gfield = gfield;
 		this.aop = aop;
+		afieldType = getType(child.getTupleDesc(), afield);
 		//afieldType = getType(child.getTupleDesc(), afield);
 		//gfieldType = getType(child.getTupleDesc(), gfield);
 		//created constructors
 		//Type gType; //this is the group type
+		//return child.next();
 		
-		if(gfield == Aggregator.NO_GROUPING){
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType = null;
-		}else{
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType = getType(child.getTupleDesc(), gfield);
-			//gType = child.getTupleDesc().getType(gfield);
-		}
-		//Type aType; // this is the aggregate type
-		//aType = child.getTupleDesc().getType(afield);
-		afieldType = getType(child.getTupleDesc(), afield);
-		switch(afieldType){
-		case INT_TYPE:
-			globalAggrigator = new IntAggregator(gfield,gfieldType,afield,aop);
-			break;
-		case STRING_TYPE:
-			globalAggrigator = new StringAggregator(gfield,gfieldType,afield,aop);
-		}
 	}
 
 	public static String aggName(Aggregator.Op aop) {
@@ -92,12 +76,29 @@ public class Aggregate extends AbstractDbIterator {
 	 * there are no more {@code Tuple}s.
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
-		if(child.hasNext()){
-			return child.next();
-		}else{
-			return null;
-		}
 		
+		//Tuple 
+		
+		if(gfield == Aggregator.NO_GROUPING){
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType = null;
+		}else{
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType = getType(child.getTupleDesc(), gfield);
+			//gType = child.getTupleDesc().getType(gfield);
+		}
+		//Type aType; // this is the aggregate type
+		//aType = child.getTupleDesc().getType(afield);
+		
+		switch(afieldType){
+		case INT_TYPE:
+			globalAggrigator = new IntAggregator(gfield,gfieldType,afield,aop);
+			break;
+		case STRING_TYPE:
+			globalAggrigator = new StringAggregator(gfield,gfieldType,afield,aop);
+		}//end switch statement
+		
+		return child.next();
 	}
 		/*
 		
@@ -128,7 +129,7 @@ public class Aggregate extends AbstractDbIterator {
 	*/
 
 	public void rewind() throws DbException, TransactionAbortedException {
-		child.rewind();
+		this.child.rewind();
 	}
 
 	/**
@@ -152,7 +153,7 @@ public class Aggregate extends AbstractDbIterator {
 		// some code goes here
 		//if(child.hasNext()){
 		TupleDesc td = child.getTupleDesc();
-		Type typeDes = td.getType(afield);
+		//Type typeDes = td.getType(afield);
 		return td;
 		//}
 		//else
