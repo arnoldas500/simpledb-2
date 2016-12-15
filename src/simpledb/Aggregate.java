@@ -13,8 +13,14 @@ public class Aggregate extends AbstractDbIterator {
 	protected DbIterator child;
 	protected int afield;
 	protected int gfield;
-	protected Type afieldType;
-	protected Type gfieldType;
+	protected Type afieldType[];
+	protected Type gfieldType[];
+	protected String afieldName[];
+	protected String gfieldName[];
+	protected TupleDesc aTupleDes;
+	protected TupleDesc gTupleDes = null;
+	protected Tuple atuple;
+	protected Tuple gtuple;
 	protected Op aop;
 	protected Aggregator globalAggrigator;
 
@@ -39,12 +45,29 @@ public class Aggregate extends AbstractDbIterator {
 		this.afield = afield;
 		this.gfield = gfield;
 		this.aop = aop;
-		afieldType = getType(child.getTupleDesc(), afield);
+		afieldType[0] = getType(this.child.getTupleDesc(), afield);
 		//afieldType = getType(child.getTupleDesc(), afield);
 		//gfieldType = getType(child.getTupleDesc(), gfield);
 		//created constructors
 		//Type gType; //this is the group type
-		//return child.next();
+		this.afieldName[0] = this.child.getTupleDesc().getFieldName(afield);
+		this.aTupleDes = new TupleDesc(afieldType, afieldName);
+		atuple = new Tuple(aTupleDes);
+		
+		if(gfield == Aggregator.NO_GROUPING){
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType[0] = null;
+			gtuple = null;
+		}else{
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType[0] = getType(this.child.getTupleDesc(), gfield);
+			gfieldName[0] = this.child.getTupleDesc().getFieldName(gfield);
+			gTupleDes = new TupleDesc(gfieldType, gfieldName);
+			gtuple = new Tuple (gTupleDes);
+			//gType = child.getTupleDesc().getType(gfield);
+		}
+		//Type aType; // this is the aggregate type
+		//aType = child.getTupleDesc().getType(afield);
 		
 	}
 
@@ -77,28 +100,24 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
 		
-		//Tuple 
 		
-		if(gfield == Aggregator.NO_GROUPING){
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType = null;
-		}else{
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType = getType(child.getTupleDesc(), gfield);
-			//gType = child.getTupleDesc().getType(gfield);
+		if(child.hasNext())
+		{
+			switch(afieldType[0])
+			{
+				case INT_TYPE:
+					globalAggrigator = new IntAggregator(gfield,gfieldType[0],afield,aop);
+					break;
+				case STRING_TYPE:
+					globalAggrigator = new StringAggregator(gfield,gfieldType[0],afield,aop);
+			}
+			return child.next();
+		}	
+		else
+		{
+			return null;
 		}
-		//Type aType; // this is the aggregate type
-		//aType = child.getTupleDesc().getType(afield);
 		
-		switch(afieldType){
-		case INT_TYPE:
-			globalAggrigator = new IntAggregator(gfield,gfieldType,afield,aop);
-			break;
-		case STRING_TYPE:
-			globalAggrigator = new StringAggregator(gfield,gfieldType,afield,aop);
-		}//end switch statement
-		
-		return child.next();
 	}
 		/*
 		
@@ -129,7 +148,7 @@ public class Aggregate extends AbstractDbIterator {
 	*/
 
 	public void rewind() throws DbException, TransactionAbortedException {
-		this.child.rewind();
+		child.rewind();
 	}
 
 	/**
