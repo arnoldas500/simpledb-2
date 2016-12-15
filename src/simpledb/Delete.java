@@ -78,7 +78,7 @@ public class Delete extends AbstractDbIterator {
     	}
     	
     	while (child.hasNext())
-    	{
+    	{ 
     		Tuple myTuple = child.next();//get the next child and save 
     
     		//should below be in a try/catch block or will the "throws" be sufficient?

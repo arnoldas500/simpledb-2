@@ -163,6 +163,9 @@ public class BufferPool {
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
 		// not necessary for assignment1
+		for(PageId myId : pages.keySet()){ //for id in the pages (hashmap) flush the page based on id
+			flushPage(myId);
+		}
 
 	}
 

@@ -105,8 +105,9 @@ public class HeapPage implements Page {
 	 */
 	
 	public void deleteTuple(Tuple t) throws DbException {
-		// some code goes here
-		// not necessary for assignment1
+		// Complete this for simpledb2 assignment
+		
+		
 		throw new UnsupportedOperationException("Implement this");
 	}
 
