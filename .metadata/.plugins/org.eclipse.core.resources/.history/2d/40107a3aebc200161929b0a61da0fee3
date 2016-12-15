@@ -1,0 +1,179 @@
+package simpledb;
+
+import java.util.*;
+
+import simpledb.Aggregator.Op;
+
+/**
+ * An {@code Aggregate} operator computes an aggregate value (e.g., sum, avg, max, min) over a single column, grouped by a
+ * single column.
+ */
+public class Aggregate extends AbstractDbIterator {
+
+	protected DbIterator child;
+	protected int afield;
+	protected int gfield;
+	protected Type afieldType[];
+	protected Type gfieldType[];
+	protected String afieldName[];
+	protected String gfieldName[];
+	protected TupleDesc aTupleDes;
+	protected Tuple gTuple;
+	protected Op aop;
+	protected Aggregator globalAggrigator;
+
+	/**
+	 * Constructs an {@code Aggregate}.
+	 *
+	 * Implementation hint: depending on the type of afield, you will want to construct an {@code IntAggregator} or
+	 * {@code StringAggregator} to help you with your implementation of {@code readNext()}.
+	 * 
+	 *
+	 * @param child
+	 *            the {@code DbIterator} that provides {@code Tuple}s.
+	 * @param afield
+	 *            the column over which we are computing an aggregate.
+	 * @param gfield
+	 *            the column over which we are grouping the result, or -1 if there is no grouping
+	 * @param aop
+	 *            the {@code Aggregator} operator to use
+	 */
+	public Aggregate(DbIterator child, int afield, int gfield, Aggregator.Op aop) {
+		this.child = child;
+		this.afield = afield;
+		this.gfield = gfield;
+		this.aop = aop;
+		afieldType[0] = getType(this.child.getTupleDesc(), afield);
+		//afieldType = getType(child.getTupleDesc(), afield);
+		//gfieldType = getType(child.getTupleDesc(), gfield);
+		//created constructors
+		//Type gType; //this is the group type
+		this.afieldName[0] = this.child.getTupleDesc().getFieldName(afield);
+		
+		if(gfield == Aggregator.NO_GROUPING){
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType[0] = null;
+			gTuple = null;
+			this.aTupleDes = new Tuple(afieldType, afieldName);
+		}else{
+			//afieldType = getType(child.getTupleDesc(), afield);
+			gfieldType[0] = getType(this.child.getTupleDesc(), gfield);
+			//gType = child.getTupleDesc().getType(gfield);
+		}
+		//Type aType; // this is the aggregate type
+		//aType = child.getTupleDesc().getType(afield);
+		
+	}
+
+	public static String aggName(Aggregator.Op aop) {
+		switch (aop) {
+		case MIN:
+			return "min";
+		case MAX:
+			return "max";
+		case AVG:
+			return "avg";
+		case SUM:
+			return "sum";
+		case COUNT:
+			return "count";
+		}
+		return "";
+	}
+
+	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
+		//made to open child
+		child.open();
+	}
+
+	/**
+	 * Returns the next {@code Tuple}. If there is a group by field, then the first field is the field by which we are
+	 * grouping, and the second field is the result of computing the aggregate, If there is no group by field, then the
+	 * result tuple should contain one field representing the result of the aggregate. Should return {@code null} if
+	 * there are no more {@code Tuple}s.
+	 */
+	protected Tuple readNext() throws TransactionAbortedException, DbException {
+		
+		
+		if(child.hasNext())
+		{
+			switch(afieldType)
+			{
+				case INT_TYPE:
+					globalAggrigator = new IntAggregator(gfield,gfieldType,afield,aop);
+					break;
+				case STRING_TYPE:
+					globalAggrigator = new StringAggregator(gfield,gfieldType,afield,aop);
+			}
+			return child.next();
+		}	
+		else
+		{
+			return null;
+		}
+		
+	}
+		/*
+		
+		*/
+		/*
+		 * 
+		 * if gfield = 0
+		 * 	afield = gettype
+		 * else
+		 * 	afield = gettype 
+		 * 	gfield = gettype
+		 */
+	//}
+		/*
+		while(child.hasNext()){ //while the db iterator isnt run keep looping
+        	Tuple t1 = child.next(); // get the next child and store it in tuple t1
+        	if(t1 == -1){ //if the column over which we are grouping the result is -1 then there is no grouping and set it as a single tuple, otherwise create the group
+        		//return single tuple
+        		System.out.println(t1);
+        		return t1; //returns the next tuple 
+        	}else{
+        		//return the groupings
+        	}
+        		
+        }
+        return null; // return null  if there are no more tuples 
+    }
+	*/
+
+	public void rewind() throws DbException, TransactionAbortedException {
+		child.rewind();
+	}
+
+	/**
+	 * Returns the {@code TupleDesc} of this {@code Aggregate}. If there is no group by field, this will have one field
+	 * - the aggregate column. If there is a group by field, the first field will be the group by field, and the second
+	 * will be the aggregate value column.
+	 * 
+	 * The name of an aggregate column should be informative. For example:
+	 * {@code aggName(aop) (child_td.getFieldName(afield))} where {@code aop} and {@code afield} are given in the
+	 * constructor, and {@code child_td} is the {@code TupleDesc} of the child iterator.
+	 * @param tupleDesc 
+	 */
+	//method for getting the tuple type at afield
+	public Type getType(TupleDesc tupleDesc, int column){
+		Type colType;
+		colType = tupleDesc.getType(column);
+		return colType;
+	}
+	
+	public TupleDesc getTupleDesc() {
+		// some code goes here
+		//if(child.hasNext()){
+		TupleDesc td = child.getTupleDesc();
+		//Type typeDes = td.getType(afield);
+		return td;
+		//}
+		//else
+			//return null;
+	}
+
+	public void close() {
+		child.close();
+	}
+}
