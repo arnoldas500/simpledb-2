@@ -39,8 +39,8 @@ public class StringAggregator implements Aggregator {
 		this.gbfieldType = gbfieldtype;
 		this.afield = afield;
 		this.what = what;
-		//assert(what == Op.COUNT);
-		//count = new HashMap<Field, Integer>();
+		assert(what == Op.COUNT);
+		count = new HashMap<Field, Integer>();
 	}
 
 	protected TupleDesc createTd(){
@@ -65,18 +65,18 @@ public class StringAggregator implements Aggregator {
 	 */
 	public void merge(Tuple tup) {
 		// some code goes here
-		//Field tuplegField;
+		Field tuplegField;
 		if(gbfieldType == null){
-			//tuplegField = null;
-		}//else
-			//tuplegField = tup.getField(gbfield);
+			tuplegField = null;
+		}else
+			tuplegField = tup.getField(gbfield);
 		
-		//if(!count.containsKey(tuplegField)){
-			//count.put(tuplegField, 0);
-		//}
+		if(!count.containsKey(tuplegField)){
+			count.put(tuplegField, 0);
+		}
 		
-		//int runningTotal = count.get(tuplegField);
-		//count.put(tuplegField, runningTotal+1);
+		int runningTotal = count.get(tuplegField);
+		count.put(tuplegField, runningTotal+1);
 	}
 
 	/**
@@ -87,6 +87,7 @@ public class StringAggregator implements Aggregator {
 	 *         aggregate specified in the constructor.
 	 */
 	public DbIterator iterator() {
+		
 		ArrayList<Tuple> t1 = new ArrayList<Tuple>();
 		TupleDesc aggTupleDesc = createTd();
 		Tuple add;

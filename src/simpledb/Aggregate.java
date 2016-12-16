@@ -13,10 +13,11 @@ public class Aggregate extends AbstractDbIterator {
 	protected DbIterator child;
 	protected int afield;
 	protected int gfield;
-	protected Type afieldType[];
-	protected Type gfieldType[];
-	protected String afieldName[];
-	protected String gfieldName[];
+	//protected Type types[];
+	protected Type afieldType;
+	protected Type gfieldType;
+	//protected String fieldnames[];
+	protected String gfieldName;
 	protected TupleDesc aTupleDes;
 	protected TupleDesc gTupleDes = null;
 	protected Tuple atuple;
@@ -45,12 +46,13 @@ public class Aggregate extends AbstractDbIterator {
 		this.afield = afield;
 		this.gfield = gfield;
 		this.aop = aop;
-		afieldType[0] = getType(this.child.getTupleDesc(), afield);
-		//afieldType = getType(child.getTupleDesc(), afield);
+		//types[0] = getType(this.child.getTupleDesc(), afield);
+		afieldType = child.getTupleDesc().getType(afield);
 		//gfieldType = getType(child.getTupleDesc(), gfield);
 		//created constructors
 		//Type gType; //this is the group type
-		this.afieldName[0] = this.child.getTupleDesc().getFieldName(afield);
+		/*
+		this.afieldName[0] = this.child.getTupleDesc().getFieldName(afield);//create
 		this.aTupleDes = new TupleDesc(afieldType, afieldName);
 		atuple = new Tuple(aTupleDes);
 		
@@ -60,12 +62,13 @@ public class Aggregate extends AbstractDbIterator {
 			gtuple = null;
 		}else{
 			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType[0] = getType(this.child.getTupleDesc(), gfield);
-			gfieldName[0] = this.child.getTupleDesc().getFieldName(gfield);
-			gTupleDes = new TupleDesc(gfieldType, gfieldName);
-			gtuple = new Tuple (gTupleDes);
+			gfieldType[0] = getType(this.child.getTupleDesc(), gfield);//get type of gfield
+			gfieldName[0] = this.child.getTupleDesc().getFieldName(gfield);//get fieldname of gfield
+			gTupleDes = new TupleDesc(gfieldType, gfieldName);//create a tuple desc for gfield
+			gtuple = new Tuple (gTupleDes);//create a tuple for gfield
 			//gType = child.getTupleDesc().getType(gfield);
 		}
+		*/
 		//Type aType; // this is the aggregate type
 		//aType = child.getTupleDesc().getType(afield);
 		
@@ -100,18 +103,19 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
 		
-		
 		if(child.hasNext())
 		{
-			switch(afieldType[0])
+			switch(afieldType)
 			{
 				case INT_TYPE:
-					globalAggrigator = new IntAggregator(gfield,gfieldType[0],afield,aop);
-					break;
+					//globalAggrigator = new IntAggregator(gfield,grouptype,afield,aop);
+					return new Tuple(getTupleDesc());
+					//break;
 				case STRING_TYPE:
-					globalAggrigator = new StringAggregator(gfield,gfieldType[0],afield,aop);
+					//globalAggrigator = new StringAggregator(gfield,grouptype,afield,aop);
+					return new Tuple(getTupleDesc());
 			}
-			return child.next();
+			return new Tuple(getTupleDesc());
 		}	
 		else
 		{
@@ -119,33 +123,7 @@ public class Aggregate extends AbstractDbIterator {
 		}
 		
 	}
-		/*
 		
-		*/
-		/*
-		 * 
-		 * if gfield = 0
-		 * 	afield = gettype
-		 * else
-		 * 	afield = gettype 
-		 * 	gfield = gettype
-		 */
-	//}
-		/*
-		while(child.hasNext()){ //while the db iterator isnt run keep looping
-        	Tuple t1 = child.next(); // get the next child and store it in tuple t1
-        	if(t1 == -1){ //if the column over which we are grouping the result is -1 then there is no grouping and set it as a single tuple, otherwise create the group
-        		//return single tuple
-        		System.out.println(t1);
-        		return t1; //returns the next tuple 
-        	}else{
-        		//return the groupings
-        	}
-        		
-        }
-        return null; // return null  if there are no more tuples 
-    }
-	*/
 
 	public void rewind() throws DbException, TransactionAbortedException {
 		child.rewind();
@@ -161,22 +139,26 @@ public class Aggregate extends AbstractDbIterator {
 	 * constructor, and {@code child_td} is the {@code TupleDesc} of the child iterator.
 	 * @param tupleDesc 
 	 */
-	//method for getting the tuple type at afield
-	public Type getType(TupleDesc tupleDesc, int column){
-		Type colType;
-		colType = tupleDesc.getType(column);
-		return colType;
-	}
 	
 	public TupleDesc getTupleDesc() {
 		// some code goes here
-		//if(child.hasNext()){
-		TupleDesc td = child.getTupleDesc();
-		//Type typeDes = td.getType(afield);
-		return td;
-		//}
-		//else
-			//return null;
+		String[] fieldnames = new String[2];
+		Type[] types = new Type[2];
+		
+		if(gfield == Aggregator.NO_GROUPING){
+			gfieldType = null;
+			types[0] = this.child.getTupleDesc().getType(afield);
+			fieldnames[0] = this.child.getTupleDesc().getFieldName(afield);
+			return new TupleDesc(types, fieldnames);
+		}else{
+			gfieldType = this.child.getTupleDesc().getType(gfield);//get type of gfield
+			gfieldName = this.child.getTupleDesc().getFieldName(gfield);//get fieldname of gfield
+			types[0] = this.child.getTupleDesc().getType(gfield);
+			fieldnames[0] = this.child.getTupleDesc().getFieldName(gfield);
+			types[1] = this.child.getTupleDesc().getType(afield);
+			fieldnames[1] = this.child.getTupleDesc().getFieldName(afield);
+			return new TupleDesc(types, fieldnames);
+		}
 	}
 
 	public void close() {
