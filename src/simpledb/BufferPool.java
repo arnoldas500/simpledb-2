@@ -194,8 +194,7 @@ public class BufferPool {
 		if(tid != null){
     		DbFile databaseFile = Database.getCatalog().getDbFile(pid.getTableId());
     		databaseFile.writePage(myPage);
-    		
-    		//tid.markDirty  //But we don't have this method?, then how?
+    		myPage.markDirty(false, tid); //mark the page as altered for future cache operations
     		
 		}
 		
