@@ -154,6 +154,12 @@ public class BufferPool {
 	public void deleteTuple(TransactionId tid, Tuple t) throws DbException, TransactionAbortedException {
 		// some code goes here
 		// not necessary for assignment1
+		
+		//iterates over changed pages and marks them as being dirtied
+		HeapFile curHP = (HeapFile) Database.getCatalog().getDbFile(t.getRecordId().getPageId().getTableId());
+		Page markChanged = curHP.deleteTuple(tid,t);
+		markChanged.markDirty(true, tid);
+		
 	}
 
 	/**
@@ -163,6 +169,9 @@ public class BufferPool {
 	public synchronized void flushAllPages() throws IOException {
 		// some code goes here
 		// not necessary for assignment1
+		for(PageId myId : pages.keySet()){ //for id in the pages (hashmap) flush the page based on id
+			flushPage(myId);
+		}
 
 	}
 
@@ -184,6 +193,17 @@ public class BufferPool {
 	private synchronized void flushPage(PageId pid) throws IOException {
 		// some code goes here
 		// not necessary for assignment1
+		//just take the page based on pid and flush 
+		Page myPage = pages.get(pid);
+		TransactionId tid = myPage.isDirty();
+		
+		if(tid != null){
+    		DbFile databaseFile = Database.getCatalog().getDbFile(pid.getTableId());
+    		databaseFile.writePage(myPage);
+    		myPage.markDirty(false, tid); //mark the page as altered for future cache operations
+    		
+		}
+		
 	}
 
 	/**
@@ -192,6 +212,7 @@ public class BufferPool {
 	public synchronized void flushPages(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for assignment1|assignment2|assignment3
+		
 	}
 
 	/**
@@ -200,6 +221,21 @@ public class BufferPool {
 	private synchronized void evictPage() throws DbException {
 		// some code goes here
 		// not necessary for assignment1
+		//Page myPage = pages.get(key)  //how do we know what page to evict?
+		//check hashmap for page id in the pages hashmap
+		for (PageId myPage : pages.keySet()){
+			try{
+				flushPage(myPage); //flush the page
+				pages.remove(myPage); //remove the page from pages hashtable based on hash id (myPage)
+
+				//break from the loop searching through pages in hashmap
+				break;
+			}
+			catch(IOException e){
+				throw new DbException("There was an error evicting page");
+			}
+		}
+		
 	}
 
 }
