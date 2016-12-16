@@ -35,7 +35,7 @@ public class HeapPage implements Page {
 	 * The previous image of this {@code HeapPage}.
 	 */
 	byte[] oldData;
-	
+	Tuple tuple;
 
 	/**
 	 * Creates a {@code HeapPage} from a byte array storing data read from disk. This byte array contains (1) a 4-byte
@@ -56,6 +56,8 @@ public class HeapPage implements Page {
 		this.td = Database.getCatalog().getTupleDesc(id.getTableId());
 		this.data = data;
 		setBeforeImage();
+		//this.tupleCount = entryCount(this.td);
+		
 	}
 
 	/**
@@ -105,8 +107,18 @@ public class HeapPage implements Page {
 	 */
 	
 	public void deleteTuple(Tuple t) throws DbException {
-		// Complete this for simpledb2 assignment
+		// some code goes here
+		//the given RecordId curRec = t.getRecordId().tupleno() does not work...
+		//needs to be broken up and have it changed to an int to work 
+		RecordId curRecId = t.getRecordId();
+		int intRec = curRecId.tupleno();
 		
+		if(pid != curRecId.getPageId())
+			throw new DbException("current Tuple isnt stored on this page!");
+		
+		//obtains id of the entry t to be deleted and then
+		//saving -1 to the entry using save tuple location 
+		//
 		
 		throw new UnsupportedOperationException("Implement this");
 	}
@@ -313,6 +325,7 @@ public class HeapPage implements Page {
 	protected void saveEntryCount(int count) {
 		// some code goes here
 		// not necessary for assignment1
+		
 		throw new UnsupportedOperationException("Implement this");
 	}
 

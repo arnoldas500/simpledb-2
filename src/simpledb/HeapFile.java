@@ -115,7 +115,20 @@ public class HeapFile implements DbFile {
 	public Page deleteTuple(TransactionId tid, Tuple t) throws DbException, TransactionAbortedException {
 		// some code goes here
 		// not necessary for assignment1
-		return null;
+		PageId pid = t.getRecordId().getPageId();
+		
+		if(pid == null)
+			throw new DbException("File doesnt contain tuple therefore cant delete it");
+		
+		if(getId() != pid.getTableId())
+			throw new DbException("File doesnt contain tuple therefore cant delete it");
+		
+		HeapPage curHP = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_WRITE);
+		
+		curHP.deleteTuple(t);
+		return  curHP;
+		
+		//return null;
 	}
 
 	// see DbFile.java for javadocs
