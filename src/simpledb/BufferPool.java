@@ -187,6 +187,8 @@ public class BufferPool {
 	private synchronized void flushPage(PageId pid) throws IOException {
 		// some code goes here
 		// not necessary for assignment1
+		flushPage(pid); //just take the page based on pid and flush
+		
 	}
 
 	/**
@@ -195,6 +197,7 @@ public class BufferPool {
 	public synchronized void flushPages(TransactionId tid) throws IOException {
 		// some code goes here
 		// not necessary for assignment1|assignment2|assignment3
+		
 	}
 
 	/**
