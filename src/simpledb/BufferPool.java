@@ -215,6 +215,7 @@ public class BufferPool {
 	private synchronized void evictPage() throws DbException {
 		// some code goes here
 		// not necessary for assignment1
+		//Page myPage = pages.get(key)  //how do we know what page to evict?
 	}
 
 }
