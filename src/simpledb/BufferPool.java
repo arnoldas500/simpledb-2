@@ -221,7 +221,7 @@ public class BufferPool {
 		for (PageId myPage : pages.keySet()){
 			try{
 				flushPage(myPage); //flush the page
-				pages.remove(myPage); //remove the page from pages based on hash id (myPage)
+				pages.remove(myPage); //remove the page from pages hashtable based on hash id (myPage)
 				//set boolean
 				evict = true;
 				//break from the loop searching through pages in hashmap
