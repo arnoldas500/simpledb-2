@@ -14,7 +14,7 @@ public class StringAggregator implements Aggregator {
 
 	protected int gbfield;
 	protected Op what;
-	protected Type gbfieldtype;
+	protected Type gbfieldType;
 	protected int afield;
 	protected HashMap<Field, Integer> count;
 
@@ -36,14 +36,14 @@ public class StringAggregator implements Aggregator {
 	public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
 		// some code goes here
 		this.gbfield = gbfield;
-		this.gbfieldtype = gbfieldtype;
+		this.gbfieldType = gbfieldtype;
 		this.afield = afield;
 		this.what = what;
 		assert(what == Op.COUNT);
 		count = new HashMap<Field, Integer>();
 	}
 
-	protected TupleDesc createMerge(){
+	protected TupleDesc createTd(){
 		String[] name;
 		Type[] type;
 		if(gbfield == Aggregator.NO_GROUPING){
@@ -51,10 +51,11 @@ public class StringAggregator implements Aggregator {
 			type = new Type[] {Type.INT_TYPE};
 		}else{
 			name = new String[] {"groupValue", "aggregateValue"};
-			type = new Type[] {gbfieldtype, Type.INT_TYPE};
+			type = new Type[] {gbfieldType, Type.INT_TYPE};
 		}
 		return new TupleDesc(type,name);
 	}
+	
 	
 	/**
 	 * Merges a new tuple into the aggregate, grouping as indicated in the constructor.
@@ -62,13 +63,13 @@ public class StringAggregator implements Aggregator {
 	 * @param tup
 	 *            the Tuple containing an aggregate field and a group-by field
 	 */
-	public void merge(Tuple tMerge) {
+	public void merge(Tuple tup) {
 		// some code goes here
 		Field tuplegField;
-		if(gbfield == Aggregator.NO_GROUPING){
+		if(gbfieldType == null){
 			tuplegField = null;
 		}else
-			tuplegField = tMerge.getField(gbfield);
+			tuplegField = tup.getField(gbfield);
 		
 		if(!count.containsKey(tuplegField)){
 			count.put(tuplegField, 0);
@@ -86,8 +87,9 @@ public class StringAggregator implements Aggregator {
 	 *         aggregate specified in the constructor.
 	 */
 	public DbIterator iterator() {
+		
 		ArrayList<Tuple> t1 = new ArrayList<Tuple>();
-		TupleDesc aggTupleDesc = createMerge();
+		TupleDesc aggTupleDesc = createTd();
 		Tuple add;
 		Field group = (Field) count.keySet().iterator();
 		while(((Iterator<Field>) group).hasNext()){
