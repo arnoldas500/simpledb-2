@@ -154,6 +154,12 @@ public class BufferPool {
 	public void deleteTuple(TransactionId tid, Tuple t) throws DbException, TransactionAbortedException {
 		// some code goes here
 		// not necessary for assignment1
+		
+		//iterates over changed pages and marks them as being dirtied
+		HeapFile curHP = (HeapFile) Database.getCatalog().getDbFile(t.getRecordId().getPageId().getTableId());
+		Page markChanged = curHP.deleteTuple(tid,t);
+		markChanged.markDirty(true, tid);
+		
 	}
 
 	/**
