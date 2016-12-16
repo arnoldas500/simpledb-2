@@ -216,6 +216,22 @@ public class BufferPool {
 		// some code goes here
 		// not necessary for assignment1
 		//Page myPage = pages.get(key)  //how do we know what page to evict?
+		boolean evict = false; //boolean for if page is to be evicted
+		//check hashmap for page id in the pages hashmap
+		for (PageId myPage : pages.keySet()){
+			try{
+				flushPage(myPage); //flush the page
+				pages.remove(myPage); //remove the page from pages based on hash id (myPage)
+				//set boolean
+				evict = true;
+				//break from the loop searching through pages in hashmap
+				break;
+			}
+			catch(IOException e){
+				throw new DbException("There was an error evicting page");
+			}
+		}
+		
 	}
 
 }
