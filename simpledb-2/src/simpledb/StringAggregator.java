@@ -16,7 +16,17 @@ public class StringAggregator implements Aggregator {
 	protected Op what;
 	protected Type gbfieldtype;
 	protected int afield;
-	protected HashMap<Field, Integer> count;
+	protected int index = 1;
+	protected HashMap<Field, Integer> agg;
+	//protected Field count = null;
+	protected Field nogrouping = null;
+	protected TupleDesc tdesc;
+	protected ArrayList<Field> fieldList = new ArrayList<Field>();
+	protected DbIterator queryResult;
+	protected ArrayList<Tuple> tupleList = new ArrayList<Tuple>();
+	protected Iterable<Tuple> tupleIterator;
+	protected Tuple temporary = null;
+	protected Field counter = null;
 
 	/**
 	 * Constructs a {@code StringAggregator}.
@@ -39,18 +49,19 @@ public class StringAggregator implements Aggregator {
 		this.gbfieldtype = gbfieldtype;
 		this.afield = afield;
 		this.what = what;
-		assert(what == Op.COUNT);
-		count = new HashMap<Field, Integer>();
+		assert what == Op.COUNT ;
+		agg = new HashMap<Field, Integer>();
+		tdesc = createTd();
 	}
 
-	protected TupleDesc createMerge(){
+	protected TupleDesc createTd(){
 		String[] name;
 		Type[] type;
 		if(gbfield == Aggregator.NO_GROUPING){
-			name = new String[] {"aggregateValue"};
+			name = new String[] {what.name()};
 			type = new Type[] {Type.INT_TYPE};
 		}else{
-			name = new String[] {"groupValue", "aggregateValue"};
+			name = new String[] {"groupValue", what.name()};
 			type = new Type[] {gbfieldtype, Type.INT_TYPE};
 		}
 		return new TupleDesc(type,name);
@@ -64,19 +75,58 @@ public class StringAggregator implements Aggregator {
 	 */
 	public void merge(Tuple tMerge) {
 		// some code goes here
-		Field tuplegField;
-		if(gbfield == Aggregator.NO_GROUPING){
-			tuplegField = null;
-		}else
-			tuplegField = tMerge.getField(gbfield);
-		
-		if(!count.containsKey(tuplegField)){
-			count.put(tuplegField, 0);
+		/*
+		 * tmerge has either at most 2 fiels
+		 * field[0] is the aggregate if there is no grouping field
+		 * if there is a grouping field
+		 * field[0] is the groupfieldname
+		 * field[1] is aggregate fieldname
+		 * 
+		 */
+		int value;
+		//Tuple temp;
+		if(gbfield == Aggregator.NO_GROUPING)
+		{
+			/*
+			 * if there's no grouping then just a tuple of size one is passed to this method
+			 * field[0] contains the aggregate field
+			 * 
+			 * first checks if the field is in the hashmap
+			 * if it is then increment the value at location its located
+			 * else add it to the hashmap
+			 */
+			if(agg.containsKey(nogrouping))
+			{
+				value = ((Integer)agg.get(nogrouping)).intValue();
+				agg.put(nogrouping, new Integer(value + 1));
+			}
+			else
+			{
+				fieldList.add(nogrouping);
+				agg.put(tMerge.fields[0], new Integer(1));
+			}
 		}
+		else
+		{
+			/*
+			 * theres a grouping field therefore add first part of tuple passed into hashmap
+			 * first position of tuple is the gfield
+			 * 2nd position of tuple is afield
+			 */
+			if(agg.containsKey(tMerge.fields[0]))
+			{
+				value = ((Integer)agg.get(tMerge.fields[0])).intValue();
+				agg.put(tMerge.fields[0], new Integer(value +1));
+			}
+			else
+			{
+				fieldList.add(tMerge.fields[0]);
+				agg.put(tMerge.fields[0], new Integer(1));
+			}
+		}//end outer else statement
 		
-		int runningTotal = count.get(tuplegField);
-		count.put(tuplegField, runningTotal+1);
-	}
+		
+	}//end method merge
 
 	/**
 	 * Creates a {@code DbIterator} over group aggregate results.
@@ -86,12 +136,51 @@ public class StringAggregator implements Aggregator {
 	 *         aggregate specified in the constructor.
 	 */
 	public DbIterator iterator() {
+		//dbiterator = tupleiterator
+		//int index;
+		//Tuple temporary = new Tuple(tdesc);
+		//Field counter;
+		Field field;
+		int aggCount; 
+		//temp = new Tuple(tdesc);
+		temporary = new Tuple(tdesc);
+		//tupleList
+		
+		for(index = 0; index < fieldList.size(); index++)
+		{
+			if(gbfield == Aggregator.NO_GROUPING)
+			{
+				aggCount = ((Integer)agg.get(fieldList.get(index)));
+				counter = new IntField(aggCount);
+				temporary.setField(0, counter);
+				tupleList.add(temporary);
+				//queryResult = new TupleIterator(tdesc, tupleList);
+				return new TupleIterator(tdesc, tupleList);
+			}//end if
+			else
+			{
+				aggCount = ((Integer)agg.get(fieldList.get(index)));
+				field = fieldList.get(index);
+				counter = new IntField(new Integer(aggCount));
+				temporary.setField(0, field);
+				temporary.setField(1, counter);
+				tupleList.add(temporary);
+				//queryResult = new TupleIterator(tdesc, tupleList);
+			}//end else
+		}//end for loop
+		//queryResult = new TupleIterator(tdesc, tupleList);
+		
+		return new TupleIterator(tdesc, tupleList);
+		
+		
+		
+		/*
 		ArrayList<Tuple> t1 = new ArrayList<Tuple>();
-		TupleDesc aggTupleDesc = createMerge();
+		TupleDesc aggTupleDesc = createTd();
 		Tuple add;
-		Field group = (Field) count.keySet().iterator();
+		Field group = (Field) agg.keySet().iterator();
 		while(((Iterator<Field>) group).hasNext()){
-			int total = count.get(group);
+			int total = agg.get(group);
 			add = new Tuple(aggTupleDesc);
 			if(gbfield == Aggregator.NO_GROUPING)
 				add.setField(0, new IntField(total));
@@ -101,7 +190,7 @@ public class StringAggregator implements Aggregator {
 			}
 			t1.add(add);
 		}
-		return new TupleIterator(aggTupleDesc, t1);
+		return new TupleIterator(aggTupleDesc, t1);*/
 	}
 }
 		
