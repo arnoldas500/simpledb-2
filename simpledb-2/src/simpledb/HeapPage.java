@@ -15,6 +15,7 @@ import java.io.*;
 public class HeapPage implements Page {
 
 	private static final DataInputStream DataInputStream = null;
+	private Tuple tupHolder;
 
 	/**
 	 * The ID of this {@code HeapPage}.
@@ -35,7 +36,7 @@ public class HeapPage implements Page {
 	 * The previous image of this {@code HeapPage}.
 	 */
 	byte[] oldData;
-	
+	Tuple tuple;
 
 	/**
 	 * Creates a {@code HeapPage} from a byte array storing data read from disk. This byte array contains (1) a 4-byte
@@ -56,6 +57,8 @@ public class HeapPage implements Page {
 		this.td = Database.getCatalog().getTupleDesc(id.getTableId());
 		this.data = data;
 		setBeforeImage();
+		//this.tupleCount = entryCount(this.td);
+		
 	}
 
 	/**
@@ -80,11 +83,24 @@ public class HeapPage implements Page {
 	
 	public Iterator<Tuple> iterator() {
 		// some code goes here
-		
+		int numTuples = entryCount();
+		int index;
 		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
-		Iterator<Tuple> iterator = tuples.iterator(); 
-        while(iterator.hasNext()) return iterator;  
-        throw new UnsupportedOperationException("Implement this"); 
+		//Iterator<Tuple> iterator; //= tuples.iterator(); 
+		
+		for(index = 1; index <= numTuples; index++)
+		{
+			tupHolder = getTuple(index);
+			tuples.add(tupHolder);
+		}
+		//iterator = tuples.iterator();
+		
+		if(tuples.iterator().hasNext())
+		{
+			return tuples.iterator();
+		}
+        return null;
+//        throw new UnsupportedOperationException("Implement this"); 
 	}
 
 	/**
@@ -106,8 +122,26 @@ public class HeapPage implements Page {
 	
 	public void deleteTuple(Tuple t) throws DbException {
 		// some code goes here
-		// not necessary for assignment1
-		throw new UnsupportedOperationException("Implement this");
+		//the given RecordId curRec = t.getRecordId().tupleno() does not work...
+		//needs to be broken up and have it changed to an int to work 
+		//RecordId curRecId = t.getRecordId();
+		//int intRec = curRecId.tupleno();
+		
+		
+		if(pid == t.getRecordId().pid && getTuple(tupleLocation(t.getRecordId().tupleno)) != null)
+		{
+			saveTupleLocation(t.getRecordId().tupleno, tupleLocation(t.getRecordId().tupleno));
+			return;
+		}
+		else
+			throw new DbException("current Tuple isnt stored on this page!");
+		//saveTupleLocation(intRec, tupleLocation(intRec));
+		
+		//obtains id of the entry t to be deleted and then
+		//saving -1 to the entry using save tuple location 
+		//
+		
+		//throw new UnsupportedOperationException("Implement this");
 	}
 
 	/**
@@ -152,17 +186,17 @@ public class HeapPage implements Page {
 	public Tuple getTuple(int entryID) {
 		
 		// some code goes here
-		int location = tupleLocation(4+4*entryID);
+		int location = tupleLocation(entryID);
 		DataInputStream in = new DataInputStream(new ByteArrayInputStream(data, location, data.length - location)); 
 		Tuple newtuple = createTuple(in);
 		
-		
-		
+		newtuple.setRecordId(new RecordId (pid, entryID));
+		return newtuple;
 		//Tuple tuple = null;
 		
 		//tuple = getTuple(entryID);
 		
-		
+		/*
 		if(!newtuple.equals(null))
 			{
 			
@@ -171,6 +205,7 @@ public class HeapPage implements Page {
 			}
 		else 
 			throw new UnsupportedOperationException("Implement this");
+			*/
 		
 	}
 
@@ -298,9 +333,9 @@ public class HeapPage implements Page {
 	protected int entryCount() {
 		
 		// some code goes here
-		if (entryCount() >= 0)
+		//if (entryCount() >= 0)
 		return readInt(data,0);
-		throw new UnsupportedOperationException("Implement this");
+		//throw new UnsupportedOperationException("Implement this");
 	}
 
 	/**
@@ -312,6 +347,7 @@ public class HeapPage implements Page {
 	protected void saveEntryCount(int count) {
 		// some code goes here
 		// not necessary for assignment1
+		
 		throw new UnsupportedOperationException("Implement this");
 	}
 
@@ -324,10 +360,10 @@ public class HeapPage implements Page {
 	 */
 	protected int tupleLocation(int entryID) {
 		// some code goes here
-		if(entryID!=-1)
-		return readInt(data,4+4*entryID);
-		else
-		throw new UnsupportedOperationException("Implement this");
+		//if(entryID!=-1)
+			return readInt(data,4+4*entryID);
+		//else
+			//throw new UnsupportedOperationException("Implement this");
 	}
 
 	/**
@@ -341,7 +377,16 @@ public class HeapPage implements Page {
 	protected void saveTupleLocation(int entryID, int location) {
 		// some code goes here
 		// not necessary for assignment1
-		throw new UnsupportedOperationException("Implement this");
+		//byte[] currentdata = getPageData();
+		setBeforeImage();
+		if(getTuple(entryID) != null)
+		{
+			writeInt(data, location, -1);
+		}
+		
+		return;
+		//data = currentdata;
+		//throw new UnsupportedOperationException("Implement this");
 	}
 
 	/**

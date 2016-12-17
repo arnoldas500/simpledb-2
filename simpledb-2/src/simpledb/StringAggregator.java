@@ -135,7 +135,7 @@ public class StringAggregator implements Aggregator {
 	 *         or a single ({@code aggregateVal}) if no grouping. The aggregateVal is determined by the type of
 	 *         aggregate specified in the constructor.
 	 */
-	public DbIterator iterator() {
+	public DbIterator iterator() throws UnsupportedOperationException{
 		//dbiterator = tupleiterator
 		//int index;
 		//Tuple temporary = new Tuple(tdesc);
