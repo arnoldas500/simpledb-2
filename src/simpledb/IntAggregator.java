@@ -40,15 +40,24 @@ public class IntAggregator implements Aggregator {
     	total = new HashMap<Field, Integer>();
 	}
 	
+	//method which grab the op value and returns the correct integer
 	public int traverseObj(){
-		switch (what){
-			case MIN: return Integer.MAX_VALUE;
-			case MAX: return Integer.MIN_VALUE;
-			case SUM: return 0;
-			case COUNT: return 0;
-			case AVG: return 0;
-			default: return 0;
+		if(what == Op.SUM){
+			return 0;
 		}
+		if(what == Op.COUNT){
+			return 0;
+		}
+		if(what == Op.MIN){
+			return Integer.MAX_VALUE;
+		}
+		if(what == Op.MAX){
+			return Integer.MIN_VALUE;
+		}
+		if(what == Op.AVG){
+			return 0;
+		}
+		return 0;
 	}
 
 	/**
