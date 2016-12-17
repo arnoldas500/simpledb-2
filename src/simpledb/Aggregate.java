@@ -24,6 +24,7 @@ public class Aggregate extends AbstractDbIterator {
 	protected Tuple gtuple;
 	protected Op aop;
 	protected Aggregator globalAggrigator;
+	protected DbIterator childIterator;
 
 	/**
 	 * Constructs an {@code Aggregate}.
@@ -46,6 +47,28 @@ public class Aggregate extends AbstractDbIterator {
 		this.afield = afield;
 		this.gfield = gfield;
 		this.aop = aop;
+		this.childIterator = null;
+		
+		Type gbType;
+    	
+    	if (gfield == Aggregator.NO_GROUPING)
+    		gbType = null;
+    	else 
+    		gbType = child.getTupleDesc().getType(gfield);
+    	
+    	Type aggType = child.getTupleDesc().getType(afield);
+    	switch(aggType)
+    	{
+    		case INT_TYPE: 
+    			globalAggrigator = new IntAggregator(gfield, gbType, afield, aop);
+    			break;
+    		case STRING_TYPE:
+    			globalAggrigator = new StringAggregator(gfield, gbType, afield, aop);
+    			break;
+    		default:
+    			assert(false);
+    	}
+		
 		//types[0] = getType(this.child.getTupleDesc(), afield);
 		afieldType = child.getTupleDesc().getType(afield);
 		//gfieldType = getType(child.getTupleDesc(), gfield);
@@ -91,8 +114,14 @@ public class Aggregate extends AbstractDbIterator {
 	}
 
 	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
-		//made to open child
 		child.open();
+    	while (child.hasNext())
+    	{
+    		globalAggrigator.merge(child.next());
+    	}
+    	childIterator = globalAggrigator.iterator();
+    	childIterator.open();
+		//this.child.open();
 	}
 
 	/**
@@ -103,6 +132,12 @@ public class Aggregate extends AbstractDbIterator {
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
 		
+		if(childIterator.hasNext())
+			return childIterator.next(); 
+		else
+			return null;
+		
+		/*
 		if(child.hasNext())
 		{
 			switch(afieldType)
@@ -121,12 +156,12 @@ public class Aggregate extends AbstractDbIterator {
 		{
 			return null;
 		}
-		
+		*/
 	}
 		
 
 	public void rewind() throws DbException, TransactionAbortedException {
-		child.rewind();
+		childIterator.rewind();
 	}
 
 	/**
@@ -142,6 +177,8 @@ public class Aggregate extends AbstractDbIterator {
 	
 	public TupleDesc getTupleDesc() {
 		// some code goes here
+		return child.getTupleDesc();
+		/*
 		String[] fieldnames = new String[2];
 		Type[] types = new Type[2];
 		
@@ -159,9 +196,11 @@ public class Aggregate extends AbstractDbIterator {
 			fieldnames[1] = this.child.getTupleDesc().getFieldName(afield);
 			return new TupleDesc(types, fieldnames);
 		}
+		*/
 	}
 
 	public void close() {
 		child.close();
+		childIterator.close();
 	}
 }
