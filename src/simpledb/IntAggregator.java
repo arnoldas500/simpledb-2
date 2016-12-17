@@ -20,27 +20,27 @@ public class IntAggregator implements Aggregator {
 	 * @param what
 	 *            the aggregation operator
 	 */
-	
-	int gbfield;
-	Type gbfieldtype;
-	int afield;
-	Op what;
-	int i;
-	HashMap<Field,Integer> aggregatedata;
-    HashMap<Field,Integer> count;
-    Field Tuplegbfield;
-
-	public IntAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
-		// some code goes here
+	protected Op what;
+	protected int gbfield;
+	protected Type gbfieldtype;
+	protected int afield;
+	protected int i;
+	protected HashMap<Field,Integer> aggHashmap;
+	//hashmap containing totals
+    protected HashMap<Field,Integer> total;
+    protected Field myGbfield;
+    //the int aggregator
+	public IntAggregator(int gbfield, Type gbfieldtype, int afield, Op what) { 
+		// intAggregator constructor
 		this.gbfield = gbfield;
 		this.gbfieldtype = gbfieldtype;
 		this.afield = afield;
 		this.what = what;
-		aggregatedata = new HashMap<Field, Integer>();
-    	count = new HashMap<Field, Integer>();
+		aggHashmap = new HashMap<Field, Integer>();
+    	total = new HashMap<Field, Integer>();
 	}
 	
-	public int data(){
+	public int traverseObj(){
 		switch (what){
 			case MIN: return Integer.MAX_VALUE;
 			case MAX: return Integer.MIN_VALUE;
@@ -59,74 +59,53 @@ public class IntAggregator implements Aggregator {
 	 */
 	public void merge(Tuple tup) {
 		// some code goes here
-		if (gbfield == Aggregator.NO_GROUPING)
-			Tuplegbfield = null;
-		else
-			Tuplegbfield = tup.getField(gbfield);
-		
-		if (!aggregatedata.containsKey(Tuplegbfield)){
-			aggregatedata.put(Tuplegbfield, data());
-			count.put(Tuplegbfield, 0);
-
+		if (gbfield == Aggregator.NO_GROUPING){ //check for aggregator grouping and if none set the gField to null
+			myGbfield = null;
+		}else{  // if there is a grouping then we need to get that field and save to myGbfield
+			myGbfield = tup.getField(gbfield);
+		}
+		if (!aggHashmap.containsKey(myGbfield)){ 
+			//look through the aggregator hashmap
+			aggHashmap.put(myGbfield, traverseObj()); 
+			//add the object values (received from traversObj) to the hashmap based on myGbfield key
+			total.put(myGbfield, 0);           
 		}
 		
-		int tuplevalue = ((IntField) tup.getField(afield)).getValue();
-    	int currentvalue = aggregatedata.get(Tuplegbfield);
-    	int currentcount = count.get(Tuplegbfield);
-    	int newvalue = currentvalue;
-    	switch(what){
-    		case MIN: 
-    			if (tuplevalue > currentvalue)
-    				newvalue = currentvalue;
-    			else
-    				newvalue = tuplevalue;
-    				
-    			break;
-    			
-    		case MAX:
-    			if (tuplevalue > currentvalue)
-    				newvalue = tuplevalue;
-    			else
-    				newvalue = currentvalue;
-    			
-    			break;
-    			
-    		case SUM:
-    			count.put(Tuplegbfield, currentcount+1);
-    			newvalue = tuplevalue + currentvalue;
-    			break;
-    			
-    		case AVG:
-    			count.put(Tuplegbfield, currentcount+1);
-    			newvalue = tuplevalue + currentvalue;
-    			break;
-    			
-    		case COUNT:
-    			newvalue = currentvalue + 1;
-    			break;
-    			
-    		default: break;
-    	}
+		int tuplevalue = ((IntField) tup.getField(afield)).getValue(); 
+    	int currentvalue = aggHashmap.get(myGbfield);
+    	int currenttotal = total.get(myGbfield);
+    	int result = currentvalue;
     	
-    	aggregatedata.put(Tuplegbfield, newvalue);
+    	//Tests op codes and complete necessary operations
+			if(what == Op.SUM){
+				total.put(myGbfield, currenttotal+1);
+				result = tuplevalue + currentvalue;
+			}
+			if(what == Op.MIN){
+				if (tuplevalue > currentvalue){
+    				result = currentvalue;
+    			}else{
+    				result = tuplevalue;
+    			}
+			}
+			if(what == Op.MAX){
+				if (tuplevalue > currentvalue){
+    				result = tuplevalue;
+    			}else{
+    				result = currentvalue;
+    			}
+			}
+			if(what == Op.COUNT){
+				result = currentvalue + 1;
+			}
+			if(what == Op.AVG){
+				total.put(myGbfield, currenttotal+1);
+    			result = tuplevalue + currentvalue;
+			}
+    	
+    	aggHashmap.put(myGbfield, result); //ad the results to the aggregator Hashmap
 	}
 	
-	public TupleDesc creategbTupleDesc()
-    {
-    	String[] names;
-    	Type[] types;
-    	if (gbfield == Aggregator.NO_GROUPING)
-    	{
-    		names = new String[] {"aggregatevalue"};
-    		types = new Type[] {Type.INT_TYPE};
-    	}
-    	else
-    	{
-    		names = new String[] {"groupvalue", "aggregatevalue"};
-    		types = new Type[] {gbfieldtype, Type.INT_TYPE};
-    	}
-    	return new TupleDesc(types, names);
-    }
 
 	/**
 	 * Creates a {@code DbIterator} over group aggregate results.
@@ -138,32 +117,64 @@ public class IntAggregator implements Aggregator {
 	public DbIterator iterator() {
 		// some code goes here
 		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
-    	TupleDesc tupledesc = creategbTupleDesc();
-    	Tuple T;
-    	for (Field group : aggregatedata.keySet())
+    	TupleDesc tupledesc = genGbDescriptor();
+    	
+    	Tuple newTuple;
+    	//create the fields of the new tuple based on keys which map group fields from the aggregator hashmap
+    	for (Field group : aggHashmap.keySet())
     	{
-    		int aggregateval;
+    		int aggVal;
     		if (what == Op.AVG)
     		{
-    			aggregateval = aggregatedata.get(group) / count.get(group);
+    			aggVal = aggHashmap.get(group) / total.get(group);
     		}
     		else
     		{
-    			aggregateval = aggregatedata.get(group);
+    			aggVal = aggHashmap.get(group);
     		}
-    		T = new Tuple(tupledesc);
+    		newTuple = new Tuple(tupledesc);
     		if (gbfield == Aggregator.NO_GROUPING){
-    			T.setField(0, new IntField(aggregateval));
+    			newTuple.setField(0, new IntField(aggVal));
     		}
     		else {
-        		T.setField(0, group);
-        		T.setField(1, new IntField(aggregateval));    			
+        		newTuple.setField(0, group);
+        		newTuple.setField(1, new IntField(aggVal));    			
     		}
-    		tuples.add(T);
+    		//add the new tuple to the hashmap
+    		tuples.add(newTuple);
     	}
+    	//return iterator
     	return new TupleIterator(tupledesc, tuples);
     
 		//throw new UnsupportedOperationException("implement me");
 	}
+	
+	public TupleDesc genGbDescriptor()
+    {
+    	String[] names; //names and types are expected by TupleDesc
+    	Type[] types;
+    	if (gbfield == Aggregator.NO_GROUPING)
+    	{	
+    		names = new String[] {
+    				"aggValue"
+    				};
+    		types = new Type[] {
+    				Type.INT_TYPE
+    				};
+    	}
+    	else
+    	{
+    		names = new String[] {
+    				"groupvalue",
+    				"aggValue"
+    				};
+    		types = new Type[] {
+    				gbfieldtype,
+    				Type.INT_TYPE
+    				};
+    	}
+    	return new TupleDesc(types, names);
+    }
+
 
 }
