@@ -40,7 +40,8 @@ public class StringAggregator implements Aggregator {
 		this.gbfieldType = gbfieldtype;
 		this.afield = afield;
 		this.what = what;
-		assert(what == Op.COUNT);
+		assert(what == Op.COUNT); //checking to see if the op code is count otherwise throws exception
+								//since stringAgg needs to only use op count
 		count = new HashMap<Field, Integer>();
 	}
 
@@ -89,7 +90,8 @@ public class StringAggregator implements Aggregator {
 		return new TupleDesc(type,name);
 	}
 	
-	
+	//This method itterates over the groups if there is a grouping
+	//and creates approprotate fields that get added to the tuples.
 	public DbIterator iterator() {
 		ArrayList<Tuple> t1 = new ArrayList<Tuple>();
 		TupleDesc aggTupleDesc = createTd();
@@ -104,7 +106,7 @@ public class StringAggregator implements Aggregator {
 			//}
 		//}
 		//}
-		for (Field groupField : count.keySet())
+		for (Field groupField : count.keySet()) 
     	{
 			int total = count.get(groupField);
 			add = new Tuple(aggTupleDesc);
