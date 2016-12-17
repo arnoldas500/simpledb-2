@@ -10,21 +10,6 @@ import simpledb.Aggregator.Op;
  */
 public class Aggregate extends AbstractDbIterator {
 
-	protected DbIterator child;
-	protected int afield;
-	protected int gfield;
-	//protected Type types[];
-	protected Type afieldType;
-	protected Type gfieldType;
-	//protected String fieldnames[];
-	protected String gfieldName;
-	protected TupleDesc aTupleDes;
-	protected TupleDesc gTupleDes = null;
-	protected Tuple atuple;
-	protected Tuple gtuple;
-	protected Op aop;
-	protected Aggregator globalAggrigator;
-
 	/**
 	 * Constructs an {@code Aggregate}.
 	 *
@@ -41,36 +26,41 @@ public class Aggregate extends AbstractDbIterator {
 	 * @param aop
 	 *            the {@code Aggregator} operator to use
 	 */
+	
+	DbIterator child;
+	int afield;
+	int gfield;
+	Aggregator.Op aop;
+	Aggregator agg;
+	DbIterator aggIterator;
+	
 	public Aggregate(DbIterator child, int afield, int gfield, Aggregator.Op aop) {
+		// some code goes here
 		this.child = child;
 		this.afield = afield;
 		this.gfield = gfield;
 		this.aop = aop;
-		//types[0] = getType(this.child.getTupleDesc(), afield);
-		afieldType = child.getTupleDesc().getType(afield);
-		//gfieldType = getType(child.getTupleDesc(), gfield);
-		//created constructors
-		//Type gType; //this is the group type
-		/*
-		this.afieldName[0] = this.child.getTupleDesc().getFieldName(afield);//create
-		this.aTupleDes = new TupleDesc(afieldType, afieldName);
-		atuple = new Tuple(aTupleDes);
+		aggIterator = null;
 		
-		if(gfield == Aggregator.NO_GROUPING){
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType[0] = null;
-			gtuple = null;
-		}else{
-			//afieldType = getType(child.getTupleDesc(), afield);
-			gfieldType[0] = getType(this.child.getTupleDesc(), gfield);//get type of gfield
-			gfieldName[0] = this.child.getTupleDesc().getFieldName(gfield);//get fieldname of gfield
-			gTupleDes = new TupleDesc(gfieldType, gfieldName);//create a tuple desc for gfield
-			gtuple = new Tuple (gTupleDes);//create a tuple for gfield
-			//gType = child.getTupleDesc().getType(gfield);
-		}
-		*/
-		//Type aType; // this is the aggregate type
-		//aType = child.getTupleDesc().getType(afield);
+		Type gbType;
+    	
+    	if (gfield == Aggregator.NO_GROUPING)
+    		gbType = null;
+    	else 
+    		gbType = child.getTupleDesc().getType(gfield);
+    	
+    	Type aggType = child.getTupleDesc().getType(afield);
+    	switch(aggType)
+    	{
+    		case INT_TYPE: 
+    			agg = new IntAggregator(gfield, gbType, afield, aop);
+    			break;
+    		case STRING_TYPE:
+    			agg = new StringAggregator(gfield, gbType, afield, aop);
+    			break;
+    		default:
+    			assert(false);
+    	}
 		
 	}
 
@@ -91,8 +81,15 @@ public class Aggregate extends AbstractDbIterator {
 	}
 
 	public void open() throws NoSuchElementException, DbException, TransactionAbortedException {
-		//made to open child
+		// some code goes here
 		child.open();
+    	while (child.hasNext())
+    	{
+    		agg.merge(child.next());
+    	}
+    	aggIterator = agg.iterator();
+    	aggIterator.open();
+		//this.child.open();
 	}
 
 	/**
@@ -102,31 +99,16 @@ public class Aggregate extends AbstractDbIterator {
 	 * there are no more {@code Tuple}s.
 	 */
 	protected Tuple readNext() throws TransactionAbortedException, DbException {
-		
-		if(child.hasNext())
-		{
-			switch(afieldType)
-			{
-				case INT_TYPE:
-					//globalAggrigator = new IntAggregator(gfield,grouptype,afield,aop);
-					return new Tuple(getTupleDesc());
-					//break;
-				case STRING_TYPE:
-					//globalAggrigator = new StringAggregator(gfield,grouptype,afield,aop);
-					return new Tuple(getTupleDesc());
-			}
-			return new Tuple(getTupleDesc());
-		}	
+		// some code goes here
+		if(aggIterator.hasNext())
+			return aggIterator.next(); 
 		else
-		{
 			return null;
-		}
-		
 	}
-		
 
 	public void rewind() throws DbException, TransactionAbortedException {
-		child.rewind();
+		// some code goes here
+		aggIterator.rewind();
 	}
 
 	/**
@@ -137,31 +119,16 @@ public class Aggregate extends AbstractDbIterator {
 	 * The name of an aggregate column should be informative. For example:
 	 * {@code aggName(aop) (child_td.getFieldName(afield))} where {@code aop} and {@code afield} are given in the
 	 * constructor, and {@code child_td} is the {@code TupleDesc} of the child iterator.
-	 * @param tupleDesc 
 	 */
-	
 	public TupleDesc getTupleDesc() {
 		// some code goes here
-		String[] fieldnames = new String[2];
-		Type[] types = new Type[2];
-		
-		if(gfield == Aggregator.NO_GROUPING){
-			gfieldType = null;
-			types[0] = this.child.getTupleDesc().getType(afield);
-			fieldnames[0] = this.child.getTupleDesc().getFieldName(afield);
-			return new TupleDesc(types, fieldnames);
-		}else{
-			gfieldType = this.child.getTupleDesc().getType(gfield);//get type of gfield
-			gfieldName = this.child.getTupleDesc().getFieldName(gfield);//get fieldname of gfield
-			types[0] = this.child.getTupleDesc().getType(gfield);
-			fieldnames[0] = this.child.getTupleDesc().getFieldName(gfield);
-			types[1] = this.child.getTupleDesc().getType(afield);
-			fieldnames[1] = this.child.getTupleDesc().getFieldName(afield);
-			return new TupleDesc(types, fieldnames);
-		}
+		return child.getTupleDesc();
+		//return null;
 	}
 
 	public void close() {
+		// some code goes here
 		child.close();
+    	aggIterator.close();
 	}
 }

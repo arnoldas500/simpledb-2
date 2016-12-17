@@ -1,5 +1,10 @@
 package simpledb;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import simpledb.Aggregator.Op;
+
 /**
  * A {@code StringAggregator} computes some aggregate value over a set of {@code StringField}s.
  */
@@ -19,9 +24,22 @@ public class StringAggregator implements Aggregator {
 	 * @throws IllegalArgumentException
 	 *             if {@code what != COUNT}
 	 */
+	
+	int gbfield;
+	Type gbfieldtype;
+	int afield;
+	Op what;
+	HashMap <Field,Integer> count;
+	Field Tuplegbfield;
 
 	public StringAggregator(int gbfield, Type gbfieldtype, int afield, Op what) {
 		// some code goes here
+		this.gbfield = gbfield;
+		this.gbfieldtype = gbfieldtype;
+		this.afield = afield;
+		this.what = what;
+		assert(what == Op.COUNT);
+    	count = new HashMap<Field, Integer>();
 	}
 
 	/**
@@ -32,7 +50,37 @@ public class StringAggregator implements Aggregator {
 	 */
 	public void merge(Tuple tup) {
 		// some code goes here
-		
+		if (gbfield == Aggregator.NO_GROUPING)
+			Tuplegbfield = null;
+		else
+			Tuplegbfield = tup.getField(gbfield);
+    	
+    	if (!count.containsKey(Tuplegbfield))
+    	{
+    		count.put(Tuplegbfield, 0);
+    	}
+    	
+    	int currentcount = count.get(Tuplegbfield);
+    	count.put(Tuplegbfield, currentcount+1);
+
+    }
+    
+    public TupleDesc creategbTupleDesc()
+    {
+    	String[] names;
+    	Type[] types;
+    	if (gbfield == Aggregator.NO_GROUPING)
+    	{
+    		names = new String[] {"aggregatevalue"};
+    		types = new Type[] {Type.INT_TYPE};
+    	}
+    	else
+    	{
+    		names = new String[] {"groupvalue", "aggregatevalue"};
+    		types = new Type[] {gbfieldtype, Type.INT_TYPE};
+    	}
+    	return new TupleDesc(types, names);
+
 	}
 
 	/**
@@ -44,7 +92,25 @@ public class StringAggregator implements Aggregator {
 	 */
 	public DbIterator iterator() {
 		// some code goes here
-		throw new UnsupportedOperationException("implement me");
+		ArrayList<Tuple> tuples = new ArrayList<Tuple>();
+    	TupleDesc tupledesc = creategbTupleDesc();
+    	Tuple T;
+    	for (Field group : count.keySet())
+    	{
+    		int aggregateval = count.get(group);
+    		T = new Tuple(tupledesc);
+    		if (gbfield == Aggregator.NO_GROUPING){
+    			T.setField(0, new IntField(aggregateval));
+    		}
+    		else {
+        		T.setField(0, group);
+        		T.setField(1, new IntField(aggregateval));    			
+    		}
+    		tuples.add(T);
+    	}
+    	return new TupleIterator(tupledesc, tuples);
+    
+		//throw new UnsupportedOperationException("implement me");
 	}
 
 }
